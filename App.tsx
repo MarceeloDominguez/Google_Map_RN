@@ -12,10 +12,11 @@ import {
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { locationsOfInterest } from "./data/data";
+import { AntDesign } from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH_IMAGE = width * 0.8;
-const CARD_HEIGHT_IMAGE = 200;
+const CARD_HEIGHT_IMAGE = 180;
 
 const category = ["Restaurantes", "Gasolineras", "Compras", "Supermercados"];
 
@@ -57,6 +58,22 @@ export default function App() {
     });
   });
 
+  const interpolations = filterLocationOfInterest.map((_, index) => {
+    const inputRange = [
+      (index - 1) * CARD_WIDTH_IMAGE,
+      index * CARD_WIDTH_IMAGE,
+      (index + 1) * CARD_WIDTH_IMAGE,
+    ];
+
+    const scale = mapAnimation.interpolate({
+      inputRange,
+      outputRange: [1, 1.5, 1],
+      extrapolate: "clamp",
+    });
+
+    return { scale };
+  });
+
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
@@ -71,14 +88,23 @@ export default function App() {
         }}
       >
         {filterLocationOfInterest.map((item, index) => {
+          const scaleStyle = {
+            transform: [
+              {
+                scale: interpolations[index].scale,
+              },
+            ],
+          };
+
           return (
             <Marker key={index} coordinate={item.location}>
-              <Image
-                source={require("./assets/location.png")}
-                style={styles.imageLocation}
-                resizeMode="contain"
-              />
-              {item.icon}
+              <View style={styles.wrapImagenLocation}>
+                <Animated.Image
+                  source={require("./assets/location.png")}
+                  style={[styles.imageLocation, scaleStyle]}
+                  resizeMode="contain"
+                />
+              </View>
             </Marker>
           );
         })}
@@ -145,12 +171,26 @@ export default function App() {
         )}
       >
         {filterLocationOfInterest.map((item, index) => {
+          const rating = item.rating;
+
           return (
             <View key={index} style={styles.containerImageSlider}>
               <Image source={{ uri: item.image }} style={styles.imageSlider} />
-              <Text style={{ paddingVertical: 10, paddingLeft: 10 }}>
-                Hola Mundo
-              </Text>
+              <View style={styles.wrapFooter}>
+                <Text style={styles.titleSlider}>{item.title}</Text>
+                <View style={styles.directionStar}>
+                  {[...Array(5)].map((_, index) => {
+                    return (
+                      <AntDesign
+                        key={index}
+                        name="star"
+                        size={13}
+                        color={rating > index ? "#d8b115" : "#b1abab"}
+                      />
+                    );
+                  })}
+                </View>
+              </View>
             </View>
           );
         })}
@@ -204,9 +244,15 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     letterSpacing: 0.4,
   },
+  wrapImagenLocation: {
+    width: 70,
+    height: 70,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   imageLocation: {
-    width: 50,
-    height: 50,
+    width: 40,
+    height: 40,
   },
   containerSlider: {
     position: "absolute",
@@ -223,5 +269,20 @@ const styles = StyleSheet.create({
   imageSlider: {
     width: CARD_WIDTH_IMAGE,
     height: CARD_HEIGHT_IMAGE,
+  },
+  wrapFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 10,
+  },
+  titleSlider: {
+    fontSize: 15,
+    fontWeight: "bold",
+    letterSpacing: 0.4,
+    opacity: 0.8,
+  },
+  directionStar: {
+    flexDirection: "row",
   },
 });
